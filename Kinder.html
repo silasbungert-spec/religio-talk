@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ReligioTalk — Forum für 12–16-Jährige</title>
+  <style>
+    :root{--bg:#f7fbff;--card:#ffffff;--muted:#666;--accent:#2b6cb0}
+    *{box-sizing:border-box}
+    body{font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--bg); color:#111}
+    header{background:linear-gradient(90deg, #2b6cb0 0%, #4aa3ff 100%); color:white; padding:28px 20px}
+    .container{max-width:1000px;margin:18px auto;padding:0 16px}
+    h1{margin:0 0 6px;font-size:22px}
+    p.lead{margin:0;font-size:14px;opacity:.95}
+    .row{display:flex;gap:16px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(2,6,23,0.06)}
+    .sidebar{flex:0 0 260px}
+    .main{flex:1}
+    .new-btn{background:#ffdd57;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+    .search{display:flex;gap:8px;margin:12px 0}
+    input, textarea, select{font:inherit;padding:10px;border-radius:8px;border:1px solid #e6eef9;background:transparent}
+    .thread{border-left:3px solid rgba(43,108,176,0.12);padding:12px;margin-bottom:12px;border-radius:8px}
+    .meta{font-size:12px;color:var(--muted)}
+    .btn{background:var(--accent);color:white;padding:8px 10px;border-radius:8px;border:none;cursor:pointer}
+    .reply{margin-top:8px}
+    .small{font-size:13px;color:var(--muted)}
+    .tag{display:inline-block;background:#eef6ff;padding:4px 8px;border-radius:999px;font-size:12px;margin-right:6px}
+    .rules{font-size:13px;line-height:1.4}
+    .warning{background:#fff4e6;border-left:4px solid #ffb84d;padding:10px;border-radius:6px;margin-top:8px}
+    footer{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+    @media (max-width:900px){.row{flex-direction:column}.sidebar{order:2}}
+    /* simple modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.45);z-index:40}
+    .modal.open{display:flex}
+    .modal .card{width:100%;max-width:720px}
+    .thread-list{max-height:560px;overflow:auto;padding-right:6px}
+    .reply-item{border-top:1px dashed #eef6ff;padding:8px 0}
+    .small-action{background:transparent;border:none;color:var(--accent);cursor:pointer;font-weight:600}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>ReligioTalk</h1>
+      <p class="lead">Ein sicherer Ort für 12–16‑Jährige, um Fragen über Religionen zu stellen, zu antworten und respektvoll zu diskutieren.</p>
+    </div>
+  </header>
+
+  <main class="container row" role="main">
+    <aside class="sidebar card">
+      <h3>Kurze Regeln</h3>
+      <ul class="rules">
+        <li>Sei respektvoll — keine Beleidigungen.</li>
+        <li>Keine Hassrede oder Diskriminierung.</li>
+        <li>Teile keine persönlichen Kontaktdaten.</li>
+        <li>Wenn du unsicher bist: frage sachlich und neugierig.</li>
+      </ul>
+
+      <div style="margin-top:12px">
+        <h4>Warum hier?</h4>
+        <p class="small">Lernen, verstehen und voneinander hören — nicht um zu überzeugen. Moderation und Meldefunktionen schützen euch.</p>
+      </div>
+
+      <div style="margin-top:12px">
+        <h4>Tags</h4>
+        <div class="small" id="tags">Christian, Islam, Judentum, Hinduismus, Buddhismus, Andere</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <h4>Elterninfo</h4>
+        <p class="small">Die Plattform bietet Moderation, Melden‑Buttons und altersgerechte Inhalte. Keine E‑Mail nötig zum Stöbern.</p>
+      </div>
+
+    </aside>
+
+    <section class="main">
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <strong>Alle Fragen</strong>
+          <div class="small">Fragen werden von Kindern gestellt und beantwortet.</div>
+        </div>
+        <div>
+          <button class="new-btn" id="openNew">Frage stellen</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="search">
+          <input id="searchInput" placeholder="Suche Fragen oder Stichworte" aria-label="Suche Fragen" />
+          <select id="filterTag">
+            <option value="">Alle Tags</option>
+            <option>Christian</option>
+            <option>Islam</option>
+            <option>Judentum</option>
+            <option>Hinduismus</option>
+            <option>Buddhismus</option>
+            <option>Andere</option>
+          </select>
+          <button class="btn" id="searchBtn">Suchen</button>
+        </div>
+        <div class="thread-list" id="threads">
+          <!-- threads injected here -->
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- modal new question -->
+  <div class="modal" id="modalNew">
+    <div class="card">
+      <h3>Neue Frage stellen</h3>
+      <p class="small">Erzähl kurz, worum es geht. Wähle ein Tag (z. B. Islam, Christentum, Andere).</p>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="qUser" placeholder="Dein (Spitz-)Name (z. B. Lina12)" />
+        <select id="qTag">
+          <option>Christian</option>
+          <option>Islam</option>
+          <option>Judentum</option>
+          <option>Hinduismus</option>
+          <option>Buddhismus</option>
+          <option>Andere</option>
+        </select>
+      </div>
+      <div style="margin-top:8px">
+        <input id="qTitle" placeholder="Kurze Frage (Titel)" />
+      </div>
+      <div style="margin-top:8px">
+        <textarea id="qBody" rows="5" placeholder="Erkläre deine Frage ein bisschen genauer..."></textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button class="small-action" id="closeModal">Abbrechen</button>
+        <button class="btn" id="postQuestion">Veröffentlichen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal thread view -->
+  <div class="modal" id="modalThread">
+    <div class="card" style="max-height:90vh;overflow:auto">
+      <button class="small-action" id="closeThread">✕ Schließen</button>
+      <div id="threadContent"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div>Erstellt für Lernzwecke • Altersgruppe: 12–16 Jahre • Bitte lokale Regeln & Datenschutz prüfen.</div>
+    </div>
+  </footer>
+
+  <script>
+    // Einfaches client-seitiges Forum mit localStorage-Persistenz.
+    const STORAGE_KEY = 'rt_threads_v1';
+
+    function uid(){return 't_'+Math.random().toString(36).slice(2,9)}
+    function now(){return new Date().toLocaleString('de-DE')}
+
+    let threads = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+    const threadsEl = document.getElementById('threads');
+    const modalNew = document.getElementById('modalNew');
+    const modalThread = document.getElementById('modalThread');
+
+    function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(threads)) }
+
+    function renderThreads(filter=''){
+      threadsEl.innerHTML='';
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const tag = document.getElementById('filterTag').value;
+      const list = threads.filter(t => {
+        if(tag && t.tag !== tag) return false;
+        if(q && !(t.title.toLowerCase().includes(q) || t.body.toLowerCase().includes(q) || t.user.toLowerCase().includes(q))) return false;
+        return true;
+      }).sort((a,b)=> b.createdAt - a.createdAt);
+
+      if(list.length===0){ threadsEl.innerHTML = '<div class="small">Keine Fragen gefunden. Stelle die erste!</div>'; return }
+
+      for(const t of list){
+        const div = document.createElement('div'); div.className='thread';
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700">${escapeHtml(t.title)}</div>
+              <div class="small">${escapeHtml(t.body.slice(0,150))}${t.body.length>150?'…':''}</div>
+              <div class="meta">${escapeHtml(t.user)} • ${t.tag} • ${t.created}</div>
+            </div>
+            <div style="text-align:right">
+              <button class="small-action" data-id="${t.id}">Ansehen</button>
+            </div>
+          </div>
+        `;
+        threadsEl.appendChild(div);
+      }
+
+      // attach handlers
+      threadsEl.querySelectorAll('button.small-action').forEach(b=> b.addEventListener('click', ()=> openThread(b.dataset.id)) );
+    }
+
+    function openModal(){ modalNew.classList.add('open') }
+    function closeModal(){ modalNew.classList.remove('open') }
+
+    function openThread(id){
+      const t = threads.find(x=>x.id===id); if(!t) return;
+      const container = document.getElementById('threadContent');
+      container.innerHTML = '';
+      const top = document.createElement('div'); top.innerHTML = `
+        <h2>${escapeHtml(t.title)}</h2>
+        <div class="meta">von ${escapeHtml(t.user)} • ${t.tag} • ${t.created}</div>
+        <p style="margin-top:8px">${nl2br(escapeHtml(t.body))}</p>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+          <button class="btn" id="replyBtn">Antworten</button>
+          <button class="small-action" id="reportBtn">Melden</button>
+        </div>
+        <hr />
+        <div id="replies"></div>
+      `;
+      container.appendChild(top);
+
+      const repliesEl = container.querySelector('#replies');
+      if((t.replies||[]).length===0) repliesEl.innerHTML = '<div class="small">Noch keine Antworten — sei die Erste / der Erste!</div>'
+      else{
+        for(const r of t.replies){
+          const rdiv = document.createElement('div'); rdiv.className='reply-item';
+          rdiv.innerHTML = `<div><strong>${escapeHtml(r.user)}</strong> <span class="meta">• ${r.created}</span></div><div style="margin-top:6px">${nl2br(escapeHtml(r.text))}</div>`;
+          repliesEl.appendChild(rdiv);
+        }
+      }
+
+      // reply form
+      const form = document.createElement('div'); form.className='reply'; form.innerHTML = `
+        <div style="margin-top:12px"><input id="replyUser" placeholder="Dein (Spitz-)Name" /></div>
+        <div style="margin-top:8px"><textarea id="replyText" rows="4" placeholder="Deine Antwort oder Frage — bleib respektvoll"></textarea></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button class="small-action" id="cancelReply">Abbrechen</button>
+          <button class="btn" id="sendReply">Antwort posten</button>
+        </div>
+      `;
+      container.appendChild(form);
+
+      // handlers
+      container.querySelector('#sendReply').addEventListener('click', ()=>{
+        const user = container.querySelector('#replyUser').value.trim() || 'Anonym';
+        const text = container.querySelector('#replyText').value.trim();
+        if(!text){ alert('Bitte etwas eingeben.'); return }
+        t.replies = t.replies || [];
+        t.replies.push({id: uid(), user, text, created: now()});
+        save(); renderThreads(); openThread(id); // re-open to refresh
+      });
+
+      container.querySelector('#cancelReply').addEventListener('click', ()=>{ openThread(id) });
+      container.querySelector('#reportBtn').addEventListener('click', ()=>{ alert('Die Moderatoren wurden informiert (Demo).') });
+
+      modalThread.classList.add('open');
+    }
+
+    function closeThread(){ modalThread.classList.remove('open') }
+
+    document.getElementById('openNew').addEventListener('click', openModal);
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('closeThread').addEventListener('click', closeThread);
+
+    document.getElementById('postQuestion').addEventListener('click', ()=>{
+      const user = document.getElementById('qUser').value.trim() || 'Anonym';
+      const title = document.getElementById('qTitle').value.trim();
+      const body = document.getElementById('qBody').value.trim();
+      const tag = document.getElementById('qTag').value;
+      if(!title || !body){ alert('Bitte Frage-Titel und Beschreibung ausfüllen.'); return }
+      const t = {id: uid(), user, title, body, tag, created: now(), createdAt: Date.now(), replies: []};
+      threads.push(t); save(); renderThreads(); closeModal();
+      // clear
+      document.getElementById('qTitle').value=''; document.getElementById('qBody').value=''; document.getElementById('qUser').value='';
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', ()=> renderThreads());
+    document.getElementById('filterTag').addEventListener('change', ()=> renderThreads());
+
+    // initialize with sample data if empty
+    if(threads.length===0){
+      threads = [
+        {id:uid(), user:'Max13', title:'Warum feiern Christen Weihnachten?', body:'Ich verstehe nicht genau, warum es gefeiert wird. Ist es nur Geschenke?', tag:'Christian', created: now(), createdAt: Date.now()-10000000, replies:[{id:uid(), user:'Sara14', text:'Weil Christen an die Geburt von Jesus glauben. Es geht auch um Familie und Dankbarkeit.', created: now()}]},
+        {id:uid(), user:'Aisha15', title:'Was ist Ramadan?', body:'Warum fasten Muslime im Ramadan und wie lange?', tag:'Islam', created: now(), createdAt: Date.now()-5000000, replies:[]}
+      ]; save();
+    }
+
+    renderThreads();
+
+    // small helpers
+    function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;') }
+    function nl2br(s){ return s.replace(/\n/g,'<br>') }
+  </script>
+</body>
+</html>
