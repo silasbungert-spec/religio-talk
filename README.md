@@ -136,7 +136,7 @@
         commentDiv.className = 'comment';
         commentDiv.textContent = commentText;
 
-        input.parentElement.appendChild(commentDiv);
+        input.parentElement.appendChild(commen-tDiv);
         input.value = '';
     }
 </script>
